@@ -18,6 +18,10 @@ pipeline {
                 checkout([
                     $class: 'GitSCM',
                     branches: [[name: "*/${env.GIT_BRANCH}"]],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [
+                        [$class: 'CloneOption', shallow: false] // prevents shallow clone
+                    ],
                     userRemoteConfigs: [[
                         url: env.GIT_REPO,
                         credentialsId: env.GIT_CREDENTIALS
@@ -27,16 +31,15 @@ pipeline {
         }
 
         stage('Build') {
-    steps {
-        sh "mvn clean install"
-    }
-}
-
+            steps {
+                sh "mvn clean install"
+            }
+        }
 
         stage('Tag and Push') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: env.GIT_CREDENTIALS,
+                    credentialsId: 'jenkins-token',
                     usernameVariable: 'GIT_USERNAME',
                     passwordVariable: 'GIT_TOKEN'
                 )]) {
@@ -47,6 +50,11 @@ pipeline {
                         sh """
                             git config user.email "rafii.bettaieb004@gmail.com"
                             git config user.name "Rafi-Bettaieb"
+
+                            # Make sure we are not in a detached HEAD
+                            git checkout ${env.GIT_BRANCH}
+
+                            git pull origin ${env.GIT_BRANCH}
 
                             git tag -a ${TAG_NAME} -m "Build ${env.BUILD_NUMBER}"
 
