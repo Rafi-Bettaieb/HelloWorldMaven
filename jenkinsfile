@@ -2,14 +2,12 @@ pipeline {
     agent any
 
     environment {
-        // Name of the Jenkins credentials (Username + PAT)
         GIT_CREDENTIALS = 'github-token'
         GIT_REPO = 'https://github.com/Rafi-Bettaieb/HelloWorldMaven.git'
         GIT_BRANCH = 'master'
     }
 
     triggers {
-        // Poll GitHub every 1 minute
         pollSCM('* * * * *')
     }
 
@@ -36,24 +34,22 @@ pipeline {
 
         stage('Tag and Push') {
             steps {
-                withCredentials([usernamePassword(credentialsId: env.GIT_CREDENTIALS,
-                                                  usernameVariable: 'GIT_USERNAME',
-                                                  passwordVariable: 'GIT_TOKEN')]) {
+                withCredentials([usernamePassword(
+                    credentialsId: env.GIT_CREDENTIALS,
+                    usernameVariable: 'GIT_USERNAME',
+                    passwordVariable: 'GIT_TOKEN'
+                )]) {
 
                     script {
                         def TAG_NAME = "build-${env.BUILD_NUMBER}"
 
                         sh """
-                            echo "Configuring git..."
                             git config user.email "rafii.bettaieb004@gmail.com"
                             git config user.name "Rafi-Bettaieb"
 
-                            echo "Creating tag: ${TAG_NAME}"
                             git tag -a ${TAG_NAME} -m "Build ${env.BUILD_NUMBER}"
 
-                            echo "Pushing tag..."
                             git push https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/Rafi-Bettaieb/HelloWorldMaven.git ${TAG_NAME}
-
                         """
                     }
                 }
