@@ -1,17 +1,16 @@
 pipeline {
-    // This tells Jenkins to run the whole pipeline inside a Docker container
-    // that already has Maven installed.
-    agent {
-        docker { 
-            image 'maven:3.9.6-eclipse-temurin-11' 
-            args '-v /root/.m2:/root/.m2' // Optional: Cache maven dependencies
-        }
-    }
+    agent any
 
     environment {
-        GIT_CREDENTIALS = 'github-token'
+        GIT_CREDENTIALS_ID = 'github-token'
         GIT_REPO = 'https://github.com/Rafi-Bettaieb/HelloWorldMaven.git'
         GIT_BRANCH = 'master'
+    }
+
+    // IMPORTANT: You MUST go to Jenkins > Manage Jenkins > Tools
+    // and create a Maven installation named EXACTLY "Maven3"
+    tools {
+        maven 'Maven3' 
     }
 
     triggers {
@@ -28,7 +27,7 @@ pipeline {
                     extensions: [[$class: 'CloneOption', shallow: false]],
                     userRemoteConfigs: [[
                         url: env.GIT_REPO,
-                        credentialsId: env.GIT_CREDENTIALS
+                        credentialsId: env.GIT_CREDENTIALS_ID
                     ]]
                 ])
             }
@@ -36,7 +35,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                // No 'tools' block needed because the Docker image has 'mvn'
+                // The 'tools' block adds mvn to the path automatically
                 sh "mvn clean install"
             }
         }
