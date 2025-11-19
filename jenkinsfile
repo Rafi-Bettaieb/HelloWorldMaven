@@ -26,11 +26,12 @@ pipeline {
             }
         }
 
-        stage('Build with Maven') {
-            steps {
-                sh 'mvn clean install'
-            }
-        }
+        stage('Build') {
+    steps {
+        sh "mvn clean install"
+    }
+}
+
 
         stage('Tag and Push') {
             steps {
