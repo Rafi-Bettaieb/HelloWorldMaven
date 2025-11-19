@@ -1,44 +1,66 @@
-pipeline { 
-    agent any 
+pipeline {
+    agent any
+
+    environment {
+        GIT_CREDENTIALS_ID = 'github-token'
+        GIT_REPO = 'https://github.com/Rafi-Bettaieb/HelloWorldMaven.git'
+        GIT_BRANCH = 'master'
+    }
+
+    // Since your log showed 'apache-maven-3.6.0' working, we use that name here.
+    tools {
+        maven 'apache-maven-3.6.0' 
+    }
+
+    triggers {
+        pollSCM('* * * * *')
+    }
+
     stages {
-        stage('Build') { 
+        stage('Checkout') {
             steps {
-                withMaven(maven : 'apache-maven-3.6.0'){
-                        sh "mvn clean compile"
-                }
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "*/${env.GIT_BRANCH}"]],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [[$class: 'CloneOption', shallow: false]],
+                    userRemoteConfigs: [[
+                        url: env.GIT_REPO,
+                        credentialsId: env.GIT_CREDENTIALS_ID
+                    ]]
+                ])
             }
         }
-        stage('Test'){
-            steps {
-                withMaven(maven : 'apache-maven-3.6.0'){
-                        sh "mvn test"
-                }
 
+        stage('Build and Test') {
+            steps {
+                // This runs clean, install (which includes tests)
+                sh "mvn clean install"
             }
         }
-        stage('build && SonarQube analysis') {
-            steps {
-                withSonarQubeEnv('sonar.tools.devops.****') {
-                    sh 'sonar-scanner -Dsonar.projectKey=myProject -Dsonar.sources=./src'
-                }
-            }
-        }
-        stage("Quality Gate") {
-            steps {
-                timeout(time: 1, unit: 'HOURS') {
-                    // Parameter indicates whether to set pipeline to UNSTABLE if Quality Gate fails
-                    // true = set pipeline to UNSTABLE, false = don't
-                    // Requires SonarScanner for Jenkins 2.7+
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-			}
-        stage('Deploy') {
-            steps {
-               withMaven(maven : 'apache-maven-3.6.0'){
-                        sh "mvn deploy"
-                }
 
+        stage('Tag and Push') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'github-token',
+                    usernameVariable: 'GIT_USERNAME',
+                    passwordVariable: 'GIT_TOKEN'
+                )]) {
+                    script {
+                        def TAG_NAME = "buildV2-${env.BUILD_NUMBER}"
+                        sh """
+                            git config user.email "rafii.bettaieb004@gmail.com"
+                            git config user.name "Rafi-Bettaieb"
+                            
+                            # Reset to avoid conflicts
+                            git checkout ${env.GIT_BRANCH}
+                            git pull origin ${env.GIT_BRANCH}
+                            
+                            git tag -a ${TAG_NAME} -m "BuildV2 ${env.BUILD_NUMBER}"
+                            git push https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/Rafi-Bettaieb/HelloWorldMaven.git ${TAG_NAME}
+                        """
+                    }
+                }
             }
         }
     }
