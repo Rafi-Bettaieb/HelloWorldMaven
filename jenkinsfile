@@ -42,7 +42,7 @@ pipeline {
         stage('Tag and Push') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'jenkins-token',
+                    credentialsId: 'github-token',
                     usernameVariable: 'GIT_USERNAME',
                     passwordVariable: 'GIT_TOKEN'
                 )]) {
