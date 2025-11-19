@@ -53,6 +53,7 @@ pipeline {
 
                             echo "Pushing tag..."
                             git push https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/Rafi-Bettaieb/HelloWorldMaven.git ${TAG_NAME}
+
                         """
                     }
                 }
