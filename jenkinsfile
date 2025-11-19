@@ -7,10 +7,9 @@ pipeline {
         GIT_BRANCH = 'master'
     }
 
-    // IMPORTANT: You MUST go to Jenkins > Manage Jenkins > Tools
-    // and create a Maven installation named EXACTLY "Maven3"
+    // Since your log showed 'apache-maven-3.6.0' working, we use that name here.
     tools {
-        maven 'Maven3' 
+        maven 'apache-maven-3.6.0' 
     }
 
     triggers {
@@ -33,9 +32,9 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build and Test') {
             steps {
-                // The 'tools' block adds mvn to the path automatically
+                // This runs clean, install (which includes tests)
                 sh "mvn clean install"
             }
         }
@@ -53,6 +52,7 @@ pipeline {
                             git config user.email "rafii.bettaieb004@gmail.com"
                             git config user.name "Rafi-Bettaieb"
                             
+                            # Reset to avoid conflicts
                             git checkout ${env.GIT_BRANCH}
                             git pull origin ${env.GIT_BRANCH}
                             
